@@ -3,12 +3,35 @@
 # This template allows you to validate your PHP application.
 # The workflow allows running tests and code linting on the default branch.
 
-image: composer:2.0
+image: jakzal/phpqa:php7.4
 
 
 pipelines:
   default:
-    stages:
-      - SecurityChecker
-      - CodingStandards
-      - UnitTests
+    - parallel:
+        - step:
+            name: before_script
+            script:
+              - composer install
+              - vendor/
+        - step:
+            name: security-checker
+            script:
+              - local-php-security-checker  --path=./composer.lock
+        - step:
+            name: phpcs
+            script:
+              - phpcs -v --standard=PSR12 --ignore=./src/Kernel.php ./src
+        - step:
+            name: phpstan
+            script:
+              - phpstan analyse ./src
+        - step:
+            name: twig-lint
+            script:
+              - twig-lint lint ./templates
+        - step:
+            name: phpunit
+            script:
+              - php bin/phpunit
+              
